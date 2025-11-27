@@ -1,0 +1,68 @@
+#include <DFRobotDFPlayerMini.h>
+#include <SoftwareSerial.h>
+
+SoftwareSerial mySerial(10, 11); // RX, TX
+DFRobotDFPlayerMini myDFPlayer;
+
+const int b1 = 2;   // Only one button
+
+int mode = 1;   // Default mode
+
+void setup() {
+  Serial.begin(9600);
+  mySerial.begin(9600);
+
+  Serial.println(F("Initializing DFPlayer..."));
+
+  if (!myDFPlayer.begin(mySerial)) {
+    Serial.println(F("Unable to begin:"));
+    Serial.println(F("1. Please recheck connections"));
+    Serial.println(F("2. Insert SD card with valid files"));
+    while (true);
+  }
+
+  Serial.println(F("DFPlayer Mini online."));
+  myDFPlayer.volume(30);
+
+  pinMode(b1, INPUT_PULLUP);
+
+  Serial.println(F("Type 1 or 2 in Serial Monitor to switch modes."));
+}
+
+void loop() {
+
+  // ---------- MODE CHANGE ----------
+  if (Serial.available()) {
+    char input = Serial.read();
+
+    if (input == '1') {
+      mode = 1;
+      Serial.println("Mode switched to MODE 1");
+    }
+    else if (input == '2') {
+      mode = 2;
+      Serial.println("Mode switched to MODE 2");
+    }
+  }
+
+  // ---------- BUTTON LOGIC ----------
+  if (digitalRead(b1) == LOW) {
+    if (mode == 1)
+      myDFPlayer.play(1);    // Track for Mode 1
+    else
+      myDFPlayer.play(2);    // Track for Mode 2
+
+    delay(400);  // debounce
+  }
+
+  // ---------- DFPLAYER STATUS ----------
+  if (myDFPlayer.available()) {
+    uint8_t type = myDFPlayer.readType();
+    int value = myDFPlayer.read();
+
+    if (type == DFPlayerPlayFinished) {
+      Serial.print(F("Track finished: "));
+      Serial.println(value);
+    }
+  }
+}
