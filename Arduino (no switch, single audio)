@@ -1,0 +1,68 @@
+#include <DFRobotDFPlayerMini.h>
+#include <SoftwareSerial.h>
+
+SoftwareSerial mySerial(10, 11); // RX, TX
+DFRobotDFPlayerMini myDFPlayer;
+
+void setup() {
+  Serial.begin(9600);
+  mySerial.begin(9600);
+
+  Serial.println(F("Initializing DFPlayer..."));
+
+  if (!myDFPlayer.begin(mySerial)) {
+    Serial.println(F("Unable to begin:"));
+    Serial.println(F("1. Please recheck connections"));
+    Serial.println(F("2. Insert SD card with valid files"));
+    while (true); // stop here
+  }
+
+  Serial.println(F("DFPlayer Mini online."));
+
+  // Check how many files
+  int fileCount = myDFPlayer.readFileCounts();
+  Serial.print(F("Files on SD card: "));
+  Serial.println(fileCount);
+
+  // Set volume
+  myDFPlayer.volume(30); // safe volume level
+  Serial.print(F("Volume set to: "));
+  Serial.println(myDFPlayer.readVolume());
+
+  // Try playing the first file
+  Serial.println(F("Trying to play track 001.mp3"));
+  myDFPlayer.play(1);
+}
+
+void loop() {
+  // Print out any errors or status messages
+  if (myDFPlayer.available()) {
+    uint8_t type = myDFPlayer.readType();
+    int value = myDFPlayer.read();
+
+    switch (type) {
+
+      case DFPlayerPlayFinished:
+        Serial.print(F("Track finished: "));
+        Serial.println(value);
+        break;
+
+      case DFPlayerError:
+        Serial.print(F("Error: "));
+        switch (value) {
+          case Busy: Serial.println(F("Card not found")); break;
+          case Sleeping: Serial.println(F("Player sleeping")); break;
+          case SerialWrongStack: Serial.println(F("Wrong stack")); break;
+          case CheckSumNotMatch: Serial.println(F("Checksum mismatch")); break;
+          case FileIndexOut: Serial.println(F("File index out of range")); break;
+          case FileMismatch: Serial.println(F("Cannot find file")); break;
+          case Advertise: Serial.println(F("In advertise mode")); break;
+          default: Serial.println(F("Unknown error")); break;
+        }
+        break;
+
+      default:
+        break;
+    }
+  }
+}
