@@ -1,0 +1,44 @@
+#include "SoftwareSerial.h"
+#include "DFRobotDFPlayerMini.h"
+
+// Define Pins
+const int buttonPin = 7;
+SoftwareSerial mySerial(10, 11); // RX, TX
+DFRobotDFPlayerMini myDFPlayer;
+
+// Variables for State Change Detection
+int lastButtonState = HIGH; // Default state for INPUT_PULLUP is HIGH
+
+void setup() {
+  Serial.begin(31250);
+  mySerial.begin(9600);
+
+  // Initialize button with internal pull-up resistor
+  pinMode(buttonPin, INPUT_PULLUP);
+
+  Serial.println("Initializing DFPlayer...");
+  if (!myDFPlayer.begin(mySerial)) {
+    Serial.println("Error: Check SD card or wiring.");
+    while(true);
+  }
+  
+  myDFPlayer.volume(20); // Set volume (0-30)
+  Serial.println("System Ready. Press button to play.");
+}
+
+void loop() {
+  // Read current button state
+  int currentButtonState = digitalRead(buttonPin);
+
+  // Check if the button was JUST pressed (transition from HIGH to LOW)
+  if (currentButtonState == LOW && lastButtonState == HIGH) {
+    Serial.println("Button Pressed: Playing Track 1");
+    myDFPlayer.play(9); // Plays 0001.mp3 once
+    
+    // Simple debounce delay to prevent double-triggering
+    delay(50); 
+  }
+
+  // Save the current state for the next loop
+  lastButtonState = currentButtonState;
+}
