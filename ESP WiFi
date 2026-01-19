@@ -1,0 +1,89 @@
+#include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
+#include <DFRobotDFPlayerMini.h>
+
+// ---------- Wi-Fi credentials ----------
+const char* ssid = "Heart_Simulator";
+const char* password = "12345678";
+
+// ---------- Web server ----------
+ESP8266WebServer server(80);
+
+// ---------- DFPlayer ----------
+DFRobotDFPlayerMini myDFPlayer;
+
+// ---------- Web page ----------
+String webpage = R"rawliteral(
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Heart Sound Simulator</title>
+  <style>
+    body { font-family: Arial; text-align: center; }
+    button {
+      width: 200px;
+      height: 50px;
+      font-size: 18px;
+      margin: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Heart Auscultation</h2>
+  <button onclick="fetch('/Audio 1')">Audio 1</button><br>
+  <button onclick="fetch('/Audio 2')">Audio 2</button><br>
+  <button onclick="fetch('/Audio 3')">Audio 3</button><br>
+</body>
+</html>
+)rawliteral";
+
+void setup() {
+  Serial.begin(9600);
+
+  // ---------- DFPlayer ----------
+  if (!myDFPlayer.begin(Serial)) {
+    while (true);
+  }
+  myDFPlayer.volume(30);
+
+  // ---------- Wi-Fi AP ----------
+  WiFi.softAP(ssid, password);
+  Serial.println("Wi-Fi started");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.softAPIP());
+
+  // ---------- Web routes ----------
+  server.on("/test", []() {
+  myDFPlayer.play(1);
+  delay(100);
+  myDFPlayer.play(1);
+  server.send(200, "text/plain", "Test");
+});
+  server.on("/", []() {
+    server.send(200, "text/html", webpage);
+  });
+
+  server.on("/Audio 1", []() {
+    delay (200);
+    myDFPlayer.play(11);
+    server.send(200, "text/plain", "Audio 1");
+  });
+
+  server.on("/Audio 2", []() {
+    delay (200);
+    myDFPlayer.play(12);
+    server.send(200, "text/plain", "Audio 2");
+  });
+
+  server.on("/Audio 3", []() {
+    delay (200);
+    myDFPlayer.play(13);
+    server.send(200, "text/plain", "Audio 3");
+  });
+
+  server.begin();
+}
+
+void loop() {
+  server.handleClient();
+}
